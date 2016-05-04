@@ -1,0 +1,30 @@
+{
+    "count":"2",
+    "step1":{
+        "fields":[
+            {
+                "key":"userEmail",
+                "type":"edit_text",
+                "hint":"Enter Your Email",
+                "v_email":{  "value" : "true",
+                    "err" : "Please enter a valid email."
+                }
+            }
+        ],
+        "title":"Step 1 of 2",
+        "next":"step2"
+    },
+    "step2":{
+        "fields":[
+            {
+                "key":"partnerEmail",
+                "type":"edit_text",
+                "hint":"Enter Your Partner's Email",
+                "v_email":{  "value" : "true",
+                    "err" : "Please enter a valid email."
+                }
+            }
+        ],
+        "title":"Step 2 of 2"
+    }
+}
