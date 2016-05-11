@@ -1,8 +1,22 @@
 package org.marklackey.heartbeatpb;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+
+import com.pubnub.api.Callback;
+import com.pubnub.api.PubnubError;
+import com.pubnub.api.PubnubException;
+
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,58 +29,73 @@ import java.util.concurrent.Executors;
  */
 public class OverlayActivity extends Activity {
 
+    int DELAY = 40;
+    long MAX = 0x88ff1100L;
+    long MIN = 0x20ff1100L;
+    long INTERVAL = 0x04000000;
+    long ALPHA_PART_MAX = 0x88000000L;
+    long ALPHA_PART_MIN = 0x20000000L;
+
+    public final static String EFFECT = "effect";
+    public final static String HEART = "heart";
+    public final static String HEALING = "healing";
+    public final static String PEACE = "peace";
+    public final static String ENERGY = "energy";
+    public final static String SPACE = "space";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Window window = getWindow();
-
-        // Let touches go through to apps/activities underneath.
-        //window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-
-        // Now set up content view
-        setContentView(R.layout.main);
-//        if (getIntent().getBooleanExtra(HeartbeatMessagingActivity.PULSE_NOW, false))
-//            pulse();
-        pulse();
-        //go to login
-        /*startActivity(new Intent(getApplicationContext(),
-                org.marklackey.heartbeat.LoginActivity.class));*/
-
-//        myThread.start();
-//
-//        Thread myThread2 = new Thread(r2);
-//        myThread2.start();
-
-        //executor.execute(r2);
-        //executor.execute(r1);
-        //executor.execute(r2);
-//        final EditText colorvalueField = (EditText) findViewById(R.id.colorvalue);
-//        Button submitColor = (Button) findViewById(R.id.colorsubmit);
-//        submitColor.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                findViewById(R.id.background)
-//                        .setBackgroundColor(Color.parseColor(colorvalueField.getText().toString()));
-//            }
-//        });
-//        submitColor.bringToFront();
-//        colorvalueField.bringToFront();
-
-//
+        setContentView(R.layout.overlay);
+        String effectType = getIntent().getStringExtra(EFFECT);
+        switch (effectType) {
+            case HEART:
+                this.r1 = new BackgroundChanger(DELAY, ALPHA_PART_MAX+0xB83343L, MIN+0xB83343L, INTERVAL);
+                pulse();
+                break;
+            case HEALING:
+                this.r1 = new BackgroundChanger(DELAY, ALPHA_PART_MAX+0x90c3d4L, MIN+0x90c3d4L, INTERVAL);
+                pulse();
+                break;
+            case PEACE:
+                this.r1 = new BackgroundChanger(DELAY, ALPHA_PART_MAX+0xC9A918L, MIN+0xC9A918L, INTERVAL);
+                pulse();
+                break;
+            case ENERGY:
+                this.r1 = new BackgroundChanger(DELAY, ALPHA_PART_MAX+0x45DE40, MIN+0x45DE40, INTERVAL);
+                pulse();
+                break;
+            case SPACE:
+                this.r1 = new BackgroundChanger(DELAY, ALPHA_PART_MAX+0xeeeeeeL, MIN+0xeeeeeeL, INTERVAL);
+                pulse();
+                break;
+        }
 
     }
+
+
+    Runnable r1;
 
     public void pulse() {
         Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(r1);
     }
 
-    Runnable r1 = new Runnable() {
-        int DELAY = 40;
-        long MAX = 0x88ff1100L;
-        long MIN = 0x20ff1100L;
-        long INTERVAL = 0x04000000;
+    class BackgroundChanger implements Runnable {
+
+        int delay;
+        long maxColorValue;
+        long minColorValue;
+        long colorInterval;
+
+        public BackgroundChanger(int delay, long maxColorValue, long minColorValue, long colorInterval) {
+            this.delay = delay;
+            this.maxColorValue = maxColorValue;
+            this.minColorValue = minColorValue;
+            this.colorInterval = colorInterval;
+        }
+
+        //for loop 'i' -- easier to have here, since otherwise inner class complains below
         long i;
 
         public void run() {
@@ -74,14 +103,11 @@ public class OverlayActivity extends Activity {
             Date dateobj = new Date();
             Log.d("X", df.format(dateobj));
             for (int j = 0; j < 2; j++) {
-                for (
-                        i = MIN; i <= MAX; i += INTERVAL) {
+                for (i = minColorValue; i <= maxColorValue; i += colorInterval) {
                     try {
-                        Thread.sleep(DELAY);
+                        Thread.sleep(delay);
                         runOnUiThread(new Runnable() {
                             public void run() {
-                                //int backgroundColor = 0x33000000 + i;
-                                //Log.d("X", String.valueOf(i));
                                 if (i > 0)
                                     findViewById(R.id.background)
                                             .setBackgroundColor((int) i);
@@ -91,9 +117,9 @@ public class OverlayActivity extends Activity {
                         Log.d("x", e.getMessage());
                     }
                 }
-                for (i = MAX; i > MIN; i -= INTERVAL) {
+                for (i = maxColorValue; i > minColorValue; i -= colorInterval) {
                     try {
-                        Thread.sleep(DELAY);
+                        Thread.sleep(delay);
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 //int backgroundColor = 0x33000000 + i;
@@ -113,5 +139,7 @@ public class OverlayActivity extends Activity {
             Log.d("X", df.format(dateobj));
             finish();
         }
-    };
+    }
+
+    ;
 }

@@ -66,29 +66,49 @@
                     android:background="@drawable/button_send" />
             </RelativeLayout>
 
-            <RelativeLayout
+            <LinearLayout
+                android:orientation="horizontal"
                 android:id="@+id/relSendHearbeat"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:layout_alignParentBottom="true"
-                android:layout_below="@+id/relSendMessage"
-                android:background="@android:color/white"
-                android:paddingLeft="10dp">
+                android:background="@android:color/white">
 
                 <Button
-                    android:id="@+id/anotherButton"
-                    android:layout_width="72dp"
+                    android:id="@+id/healingButton"
                     android:layout_height="match_parent"
-                    android:layout_margin="4dp"
-                    android:text="Other" />
+                    android:layout_width="80dp"
+                    android:text="@string/healingText"
+                    android:background="#90c3d4"
+                    />
                 <Button
-                    android:id="@+id/heartbeatButton"
-                    android:layout_width="72dp"
+                    android:id="@+id/loveButton"
                     android:layout_height="match_parent"
+                    android:layout_width="60dp"
                     android:layout_alignParentRight="true"
-                    android:layout_margin="4dp"
-                    android:text="Heartbeat" />
-            </RelativeLayout>
+                    android:text="@string/loveText"
+                    android:background="#DE4053"/>
+                <Button
+                    android:id="@+id/energyButton"
+                    android:layout_height="match_parent"
+                    android:layout_width="85dp"
+                    android:text="@string/energyText"
+                    android:background="#45DE40"/>
+                <Button
+                    android:id="@+id/spaceButton"
+                    android:layout_height="match_parent"
+                    android:layout_width="70dp"
+                    android:text="@string/spaceText"
+                    android:background="#ffffff"/>
+                <Button
+                    android:id="@+id/peaceButton"
+                    android:layout_height="match_parent"
+                    android:layout_width="70dp"
+                    android:text="@string/peaceText"
+                    android:background="#E3BF20"/>
+
+
+            </LinearLayout>
         </RelativeLayout>
     </RelativeLayout>
 

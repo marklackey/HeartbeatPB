@@ -27,6 +27,8 @@ public class MessagingActivity extends ActionBarActivity {
     private static final int REQUEST_CODE_LOGIN = 2;
     private static final int REQUEST_CODE_INVITE = 3;
     private static final int REQUEST_CODE_ACCEPTREJECT = 4;
+    private static final int REQUEST_CODE_WAITING = 5;
+
     private static final String TAG = "MessagingActivity";
     public static final String SENDER_ID = "senderId";
     public static final String HEARTBEAT = "heartbeat";
@@ -35,6 +37,7 @@ public class MessagingActivity extends ActionBarActivity {
     public static final String REJECT = "rejectedBy";
     public static final String INVITED = "invitedBy";
     public static final String RESPONSE = "response";
+    public static final String START_OVER = "startOver";
 
     protected MessageAdapter messageAdapter;
 
@@ -57,7 +60,7 @@ public class MessagingActivity extends ActionBarActivity {
         messagesList.setAdapter(messageAdapter);
 
         Pubnub pubnub =
-                new Pubnub("pub-c-384aeed2-e5cc-4799-9373-5425241c978f", "sub-c-08b59cf6-0e6d-11e6-a5b5-0619f8945a4f");
+                new Pubnub("pub-c-384aeed2-e5cc-4799-9373-5425241c978f", "sub-c-08b59cf6-0e6d-11e6-a5b5-0619f8945a4f", true);
         app = ((HBApplication) getApplication());
         app.setPubnub(pubnub);
 
@@ -92,26 +95,59 @@ public class MessagingActivity extends ActionBarActivity {
         });
 
         //just like send button, but this is a special heartbeat messsage
-        findViewById(R.id.heartbeatButton).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.loveButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Map<String, String> heartbeat = new HashMap<String, String>();
-                heartbeat.put("heartbeat", getUser().getUserEmailAddress());
-                heartbeat.put("senderId", getUser().getUserEmailAddress());
-                app.getPubNub().publish(getUser().getSharedChannelName(), new JSONObject(heartbeat), new Callback() {
-                    @Override
-                    public void successCallback(String channel, Object message) {
-                        super.successCallback(channel, message);
-                    }
-
-                    @Override
-                    public void errorCallback(String channel, PubnubError error) {
-                        super.errorCallback(channel, error);
-                    }
-                });
+                sendHeartbeat(OverlayActivity.HEART);
+            }
+        });
+        //just like send button, but this is a special heartbeat messsage
+        findViewById(R.id.energyButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendHeartbeat(OverlayActivity.ENERGY);
+            }
+        });
+        //just like send button, but this is a special heartbeat messsage
+        findViewById(R.id.peaceButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendHeartbeat(OverlayActivity.PEACE);
+            }
+        });
+        //just like send button, but this is a special heartbeat messsage
+        findViewById(R.id.spaceButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendHeartbeat(OverlayActivity.SPACE);
+            }
+        });
+        //just like send button, but this is a special heartbeat messsage
+        findViewById(R.id.healingButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendHeartbeat(OverlayActivity.HEALING);
             }
         });
 
+
+    }
+    void sendHeartbeat(String effectChoice)
+    {
+        Map<String, String> heartbeat = new HashMap<String, String>();
+        heartbeat.put(HEARTBEAT, effectChoice);
+        heartbeat.put(SENDER_ID, getUser().getUserEmailAddress());
+        app.getPubNub().publish(getUser().getSharedChannelName(), new JSONObject(heartbeat), new Callback() {
+            @Override
+            public void successCallback(String channel, Object message) {
+                super.successCallback(channel, message);
+            }
+
+            @Override
+            public void errorCallback(String channel, PubnubError error) {
+                super.errorCallback(channel, error);
+            }
+        });
 
     }
 
@@ -157,7 +193,7 @@ public class MessagingActivity extends ActionBarActivity {
         //Initiate User
         HBUser user = new HBUser();
         SharedPreferences settings = getPreferences(MODE_PRIVATE);
-        String userStateSetting = settings.getString("userState", null);
+        String userStateSetting = settings.getString(HBUser.USER_STATE, null);
 
         if (userStateSetting != null) {
             user.setUserState(HBUser.UserState.valueOf(userStateSetting));
@@ -182,40 +218,9 @@ public class MessagingActivity extends ActionBarActivity {
     //show waiting screen for INITIATOR, wait for response message
     private void waitForResponse() {
         Log.d("X", "Waiting for response.");
-        try {
-            app.getPubNub().subscribe(getUser().getPartnerOnlyChannelName(), new Callback() {
-                @Override
-                public void successCallback(String channel, Object message) {
-                    //examine messages to see if it's a accept or reject message
-                    try {
-                        JSONObject response = (JSONObject) message;
-                        if (response.has(ACCEPT)) {
-                            String partnerEmailAddress = response.getString(ACCEPT);
-                            //Toast.makeText(getApplicationContext(), partnerEmailAddress + " accepted.", Toast.LENGTH_LONG).show();
-                            getUser().setSharedChannelName(CommonUtils.createURLSafeBase64Hash(getUser().getPartnerEmailAddress() + getUser().getUserEmailAddress()));
-                            getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
-                            getUser().persistUser(MessagingActivity.this);
-                            startChatting();
-                        } else if (response.has(REJECT)) {
-                            app.setUser(new HBUser());
-                            getUser().persistUser(MessagingActivity.this);
-                            init();
-                        } else
-                            Log.d("X", message.toString());
-                    } catch (JSONException e) {
-                        Log.d("X", e.getLocalizedMessage());
-                    }
-                }
+        Intent waitingIntent = new Intent(getApplicationContext(), WaitingActivity.class);
+        startActivityForResult(waitingIntent, REQUEST_CODE_WAITING);
 
-                @Override
-                public void errorCallback(String channel, PubnubError error) {
-                    Log.d("X", error.getErrorString());
-                }
-            });
-        } catch (PubnubException e) {
-            Log.d("X", e.getLocalizedMessage());
-
-        }
     }
 
     @Override
@@ -247,14 +252,24 @@ public class MessagingActivity extends ActionBarActivity {
             //we were invited and responded to the invite
         } else if (requestCode == REQUEST_CODE_ACCEPTREJECT && resultCode == RESULT_OK) {
             // If accepts:
-            if (data.getStringExtra("response").equals(ACCEPT)) {
+            if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
                 getUser().setSharedChannelName(CommonUtils.createURLSafeBase64Hash(getUser().getUserEmailAddress() + getUser().getPartnerEmailAddress()));
                 getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
                 getUser().persistUser(this);
                 //rejected invite, so start over
-            } else if (data.getStringExtra("response").equals(REJECT)) {
+            } else if (data.getStringExtra(RESPONSE).equals(REJECT)) {
                 app.setUser(new HBUser());
                 getUser().persistUser(this);
+            }
+        } else if (requestCode == REQUEST_CODE_WAITING && resultCode == RESULT_OK) {
+            if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
+                getUser().setSharedChannelName(CommonUtils.createURLSafeBase64Hash(getUser().getPartnerEmailAddress() + getUser().getUserEmailAddress()));
+                getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
+                getUser().persistUser(MessagingActivity.this);
+                //rejected invite, so start over
+            } else if (data.getStringExtra(RESPONSE).equals(REJECT) || data.getStringExtra(RESPONSE).equals(START_OVER)) {
+                app.setUser(new HBUser());
+                getUser().persistUser(MessagingActivity.this);
             }
         } else {
             Log.d("X", "Request:" + requestCode + "Result:" + resultCode);
@@ -281,7 +296,7 @@ public class MessagingActivity extends ActionBarActivity {
                             for (int i = 0; i < messages.length(); i++) {
                                 JSONObject singleMessage = messages.getJSONObject(i);
                                 String senderId = singleMessage.getString(SENDER_ID);
-                                if (senderId != null) {
+                                if (senderId != null && singleMessage.has(MESSAGE_TEXT)) {
                                     //for now, only add regular text messages to the message history
                                     if (senderId.equals(getUser().getPartnerEmailAddress())) {
                                         onIncomingMessage(new WritableMessage(senderId, singleMessage.getString(MESSAGE_TEXT)), MessageAdapter.DIRECTION_OUTGOING);
@@ -316,12 +331,19 @@ public class MessagingActivity extends ActionBarActivity {
 
                             try {
                                 JSONObject singleMessage = (JSONObject) message;
-                                String senderId = singleMessage.getString(SENDER_ID);
-                                //only regular messages for now. heartbeats soon.
-                                if (senderId.equals(getUser().getPartnerEmailAddress())) {
-                                    messageAdapter.addMessage(new WritableMessage(senderId, singleMessage.getString(MESSAGE_TEXT)), MessageAdapter.DIRECTION_OUTGOING);
-                                } else if (senderId.equals(getUser().getUserEmailAddress())) {
-                                    messageAdapter.addMessage(new WritableMessage(senderId, singleMessage.getString(MESSAGE_TEXT)), MessageAdapter.DIRECTION_INCOMING);
+                                if(singleMessage.has(HEARTBEAT)) {
+                                    Intent overlay = new Intent(getApplicationContext(), OverlayActivity.class);
+                                    overlay.putExtra(OverlayActivity.EFFECT,singleMessage.getString(HEARTBEAT));
+                                    startActivity(overlay);
+                                }
+                                else {
+                                    String senderId = singleMessage.getString(SENDER_ID);
+                                    //only regular messages for now. heartbeats soon.
+                                    if (senderId.equals(getUser().getPartnerEmailAddress())) {
+                                        messageAdapter.addMessage(new WritableMessage(senderId, singleMessage.getString(MESSAGE_TEXT)), MessageAdapter.DIRECTION_OUTGOING);
+                                    } else if (senderId.equals(getUser().getUserEmailAddress())) {
+                                        messageAdapter.addMessage(new WritableMessage(senderId, singleMessage.getString(MESSAGE_TEXT)), MessageAdapter.DIRECTION_INCOMING);
+                                    }
                                 }
 
                             } catch (JSONException e) {
