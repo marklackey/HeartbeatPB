@@ -6,15 +6,11 @@ import com.pubnub.api.PubnubError;
 import com.pubnub.api.PubnubException;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-import org.json.*;
-
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 
 /**
  * To work on unit tests, switch the Test Artifact in the Build Variants view.

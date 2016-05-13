@@ -15,31 +15,29 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
-        android:name=".HBApplication"
-        android:allowBackup="true"
+        android:name="org.marklackey.heartbeatpb.HBApplication"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MessagingActivity"
-            android:label="@string/app_name">
-            <intent-filter>
+            android:name="org.marklackey.heartbeatpb.MessagingActivity"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="stateAlwaysHidden">
+        <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".LoginActivity"></activity>
-        <activity
-            android:name=".InviteActivity"></activity>
-        <activity
-            android:name=".AcceptOrRejectActivity"></activity>
-        <activity
-            android:name=".WaitingActivity"></activity>
+        <activity android:name="org.marklackey.heartbeatpb.LoginActivity"/>
+        <activity android:name="org.marklackey.heartbeatpb.InviteActivity"/>
+        <activity android:name="org.marklackey.heartbeatpb.AcceptOrRejectActivity"/>
+        <activity android:name="org.marklackey.heartbeatpb.WaitingActivity"/>
 
-        <activity android:name=".OverlayActivity" android:screenOrientation="portrait"
+        <activity android:name="org.marklackey.heartbeatpb.OverlayActivity"
+            android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
     </application>
 

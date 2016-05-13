@@ -1,22 +1,8 @@
 package org.marklackey.heartbeatpb;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
-import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-
-import com.pubnub.api.Callback;
-import com.pubnub.api.PubnubError;
-import com.pubnub.api.PubnubException;
-
-import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

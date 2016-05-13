@@ -29,6 +29,7 @@ import com.pubnub.api.PubnubError;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +85,18 @@ public class AcceptOrRejectActivity extends AppCompatActivity implements LoaderM
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
+            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
+    }
+    @Override
+    public void onBackPressed()
+    {
+        setResult(RESULT_CANCELED, getIntent());
+        super.onBackPressed();
     }
 
     private void populateAutoComplete() {
@@ -147,7 +160,7 @@ public class AcceptOrRejectActivity extends AppCompatActivity implements LoaderM
         mAuthTask.execute((Void) null);
 
         getIntent().putExtra(MessagingActivity.RESPONSE, response);
-        setResult(RESULT_OK,getIntent());
+        setResult(RESULT_OK, getIntent());
     }
 
     private boolean isEmailValid(String email) {

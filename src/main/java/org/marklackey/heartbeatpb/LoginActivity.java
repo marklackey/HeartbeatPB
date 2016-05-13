@@ -20,15 +20,11 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.pubnub.api.Callback;
@@ -41,8 +37,7 @@ import java.util.concurrent.Semaphore;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.marklackey.heartbeatpb.R;
+import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -84,6 +79,26 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
+            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
+    }
+    @Override
+    public void onBackPressed()
+    {
+        setResult(RESULT_CANCELED, getIntent());
+        super.onBackPressed();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        HBApplication app = (HBApplication) getApplication();
+        if (app != null && app.getPubNub() != null && app.getUser()!=null&&app.getUser().getSharedChannelName()!=null)
+
+            app.getPubNub().unsubscribe(CommonUtils.createURLSafeBase64Hash(mEmailView.getText().toString()));
     }
 
     private void populateAutoComplete() {
@@ -168,7 +183,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            getIntent().putExtra(HBUser.USER_EMAIL_ADDRESS,email);
+            getIntent().putExtra(HBUser.USER_EMAIL_ADDRESS, email);
             mAuthTask = new UserLoginTask(email);
             mAuthTask.execute((Void) null);
         }
@@ -302,23 +317,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             Log.d("X", error.getErrorString());
                             s.release();
                         }
+
                         @Override
                         public void connectCallback(String channel, Object message) {
-                            checkForInvitationMessages(channel,s);
+                            checkForInvitationMessages(channel, s);
                         }
 
                     });
                 } catch (PubnubException pubnubException) {
                     s.release();
-                    Log.d("X",pubnubException.getLocalizedMessage());
+                    Log.d("X", pubnubException.getLocalizedMessage());
                     return false;
                 }
                 //acquire the lock. won't release until one of the release methods above has been called
                 s.acquire();
-            }
-            catch (InterruptedException e)
-            {
-                Log.d("X",e.getLocalizedMessage());
+            } catch (InterruptedException e) {
+                Log.d("X", e.getLocalizedMessage());
                 return false;
             }
             return true;
@@ -330,13 +344,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 public void successCallback(String channel, Object message) {
                     String partnerEmailAddress = null;
                     try {
-                        JSONArray messages = (JSONArray)((JSONArray)message).get(0);
+                        JSONArray messages = (JSONArray) ((JSONArray) message).get(0);
                         partnerEmailAddress = messages.getJSONObject(0).getString(MessagingActivity.INVITED);
                     } catch (JSONException e) {
                         Log.d("X", e.getLocalizedMessage());
                     }
-                    if (partnerEmailAddress!=null)
-                        getIntent().putExtra(HBUser.PARTNER_EMAIL_ADDRESS,partnerEmailAddress);
+                    if (partnerEmailAddress != null)
+                        getIntent().putExtra(HBUser.PARTNER_EMAIL_ADDRESS, partnerEmailAddress);
                     s.release();
                 }
 
@@ -356,7 +370,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             if (success) {
                 finish();
             } else {
-                Toast.makeText(getApplicationContext(),"There was an error.",Toast.LENGTH_LONG);
+                Toast.makeText(getApplicationContext(), "There was an error.", Toast.LENGTH_LONG);
             }
         }
 

@@ -55,6 +55,14 @@
                 android:layout_marginTop="16dp"
                 android:text="@string/action_accept"
                 android:textStyle="bold" />
+            <TextView
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/or"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:gravity="center"/>
             <Button
                 android:id="@+id/reject_button"
                 style="?android:textAppearanceSmall"

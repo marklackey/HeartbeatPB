@@ -1,7 +1,6 @@
 package org.marklackey.heartbeatpb;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 
 import com.pubnub.api.Pubnub;
 

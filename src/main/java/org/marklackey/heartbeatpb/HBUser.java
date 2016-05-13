@@ -3,13 +3,6 @@ package org.marklackey.heartbeatpb;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Base64;
-import android.util.Log;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by marklackey on 5/1/16.

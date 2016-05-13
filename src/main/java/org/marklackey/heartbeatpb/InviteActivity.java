@@ -20,29 +20,23 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.pubnub.api.Callback;
 import com.pubnub.api.PubnubError;
-import com.pubnub.api.PubnubException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.marklackey.heartbeatpb.R;
+import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -84,8 +78,39 @@ public class InviteActivity extends AppCompatActivity implements LoaderCallbacks
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        Button startOverButton = (Button) findViewById(R.id.start_over_button);
+        startOverButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getIntent().putExtra(MessagingActivity.RESPONSE, MessagingActivity.START_OVER);
+                setResult(RESULT_OK, getIntent());
+                finish();
+            }
+        });
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
+            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        HBApplication app = (HBApplication) getApplication();
+        if (app != null && app.getPubNub() != null &&
+                app.getUser() != null &&
+                app.getUser().getPartnerOnlyChannelName() != null)
+            app.getPubNub().unsubscribe(app.getUser().getPartnerOnlyChannelName());
+    }
+    @Override
+    public void onBackPressed()
+    {
+        setResult(RESULT_CANCELED, getIntent());
+        super.onBackPressed();
+    }
     private void populateAutoComplete() {
         if (!mayRequestContacts()) {
             return;
@@ -171,6 +196,7 @@ public class InviteActivity extends AppCompatActivity implements LoaderCallbacks
             mAuthTask = new UserLoginTask(email);
             mAuthTask.execute((Void) null);
         }
+
         getIntent().putExtra(HBUser.PARTNER_EMAIL_ADDRESS,email);
         setResult(RESULT_OK, getIntent());
 
@@ -179,11 +205,6 @@ public class InviteActivity extends AppCompatActivity implements LoaderCallbacks
     private boolean isEmailValid(String email) {
         //TODO: Replace this with your own logic
         return (!TextUtils.isEmpty(email)) && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
-    }
-
-    private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() > 4;
     }
 
     /**
