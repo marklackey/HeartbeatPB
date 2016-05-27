@@ -29,7 +29,7 @@ import com.pubnub.api.PubnubError;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.marklackey.heartbeatpb.util.NetworkAccesss;
+import org.marklackey.heartbeatpb.util.CommonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,12 +86,7 @@ public class AcceptOrRejectActivity extends AppCompatActivity implements LoaderM
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
-            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
-    }
+
     @Override
     public void onBackPressed()
     {
@@ -281,8 +276,7 @@ public class AcceptOrRejectActivity extends AppCompatActivity implements LoaderM
                 try {
                     //send a message on the channel named after the partner's email address,
                     // with the user's email address as the content of the message
-
-                    app.getPubNub().publish(CommonUtils.createURLSafeBase64Hash(app.getUser().getUserEmailAddress()),
+                    app.getPubNub().publish(CommonUtils.createPubNubSafeBase64Hash(app.getUser().getUserEmailAddress()),
                             new JSONObject().put(response, (app.getUser().getUserEmailAddress())),
                             new Callback() {
                                 @Override

@@ -36,6 +36,7 @@ import java.util.concurrent.Semaphore;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.marklackey.heartbeatpb.util.CommonUtils;
 import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import static android.Manifest.permission.READ_CONTACTS;
@@ -89,13 +90,15 @@ public class InviteActivity extends AppCompatActivity implements LoaderCallbacks
             }
         });
     }
+
     @Override
     protected void onResume() {
         super.onResume();
-        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
-            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext())) {
+            setResult(RESULT_OK);
+            finish();
+        }
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -320,7 +323,7 @@ public class InviteActivity extends AppCompatActivity implements LoaderCallbacks
                 try {
                     //send a message on the channel named after the partner's email address,
                     // with the user's email address as the content of the message
-                    String partnerOnlyChannelName = CommonUtils.createURLSafeBase64Hash(mEmail);
+                    String partnerOnlyChannelName = CommonUtils.createPubNubSafeBase64Hash(mEmail);
                     app.getPubNub().publish(partnerOnlyChannelName,
                             new JSONObject().put(MessagingActivity.INVITED, app.getUser().getUserEmailAddress()),
                             new Callback() {

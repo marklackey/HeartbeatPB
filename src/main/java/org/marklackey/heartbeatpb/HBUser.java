@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.marklackey.heartbeatpb.util.CommonUtils;
+
 /**
  * Created by marklackey on 5/1/16.
  */
@@ -57,7 +59,7 @@ public class HBUser {
     }
 
     public String getPartnerOnlyChannelName() {
-        return CommonUtils.createURLSafeBase64Hash(partnerEmailAddress);
+        return CommonUtils.createPubNubSafeBase64Hash(partnerEmailAddress);
     }
 
     public void persistUser(Activity activity) {

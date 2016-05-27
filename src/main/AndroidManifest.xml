@@ -39,6 +39,8 @@
         <activity android:name="org.marklackey.heartbeatpb.OverlayActivity"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+
+        <activity android:name="org.marklackey.heartbeatpb.NoInternetActivity"/>
     </application>
 
 </manifest>

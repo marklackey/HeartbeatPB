@@ -29,7 +29,6 @@ import android.widget.Toast;
 
 import com.pubnub.api.Callback;
 import com.pubnub.api.PubnubError;
-import com.pubnub.api.PubnubException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +36,7 @@ import java.util.concurrent.Semaphore;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.marklackey.heartbeatpb.util.CommonUtils;
 import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import static android.Manifest.permission.READ_CONTACTS;
@@ -80,25 +80,31 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
     }
+
     @Override
     protected void onResume() {
         super.onResume();
-        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
-            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext())) {
+            setResult(RESULT_OK);
+            finish();
+        }
     }
+
     @Override
-    public void onBackPressed()
-    {
+    public void onBackPressed() {
         setResult(RESULT_CANCELED, getIntent());
         super.onBackPressed();
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         HBApplication app = (HBApplication) getApplication();
-        if (app != null && app.getPubNub() != null && app.getUser()!=null&&app.getUser().getSharedChannelName()!=null)
-
-            app.getPubNub().unsubscribe(CommonUtils.createURLSafeBase64Hash(mEmailView.getText().toString()));
+        CommonUtils.unsubscribeAllChannels(app);
+        if (mAuthTask != null) {
+            mAuthTask.cancel(true);
+            mAuthTask = null;
+        }
     }
 
     private void populateAutoComplete() {
@@ -275,7 +281,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(LoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
-
         mEmailView.setAdapter(adapter);
     }
 
@@ -309,58 +314,42 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             try {
                 //a lock so that the system waits for us to check if we've been invited
                 final Semaphore s = new Semaphore(0);
-                try {
 
-                    app.getPubNub().subscribe(CommonUtils.createURLSafeBase64Hash(mEmail), new Callback() {
-                        @Override
-                        public void errorCallback(String channel, PubnubError error) {
-                            Log.d("X", error.getErrorString());
+                app.getPubNub().history(CommonUtils.createPubNubSafeBase64Hash(mEmail), 1, new Callback() {
+                    @Override
+                    public void successCallback(String channel, Object message) {
+                        String partnerEmailAddress = null;
+                        try {
+                            JSONArray messages = (JSONArray) ((JSONArray) message).get(0);
+                            if (messages.length() > 1 && messages.getJSONObject(1).has(MessagingActivity.INVITED))
+                                partnerEmailAddress = messages.getJSONObject(1).getString(MessagingActivity.INVITED);
+                            partnerEmailAddress = messages.getJSONObject(0).getString(MessagingActivity.INVITED);
+                        } catch (JSONException e) {
+                            Log.d("X", e.getLocalizedMessage());
                             s.release();
                         }
+                        if (partnerEmailAddress != null)
+                            getIntent().putExtra(HBUser.PARTNER_EMAIL_ADDRESS, partnerEmailAddress);
+                        s.release();
+                    }
 
-                        @Override
-                        public void connectCallback(String channel, Object message) {
-                            checkForInvitationMessages(channel, s);
-                        }
+                    @Override
+                    public void errorCallback(String channel, PubnubError error) {
+                        Log.d("X", error.getErrorString());
+                        s.release();
+                    }
+                });
 
-                    });
-                } catch (PubnubException pubnubException) {
-                    s.release();
-                    Log.d("X", pubnubException.getLocalizedMessage());
-                    return false;
-                }
                 //acquire the lock. won't release until one of the release methods above has been called
                 s.acquire();
+
+                return true;
             } catch (InterruptedException e) {
                 Log.d("X", e.getLocalizedMessage());
                 return false;
             }
-            return true;
         }
 
-        void checkForInvitationMessages(String channel, final Semaphore s) {
-            app.getPubNub().history(channel, 1, new Callback() {
-                @Override
-                public void successCallback(String channel, Object message) {
-                    String partnerEmailAddress = null;
-                    try {
-                        JSONArray messages = (JSONArray) ((JSONArray) message).get(0);
-                        partnerEmailAddress = messages.getJSONObject(0).getString(MessagingActivity.INVITED);
-                    } catch (JSONException e) {
-                        Log.d("X", e.getLocalizedMessage());
-                    }
-                    if (partnerEmailAddress != null)
-                        getIntent().putExtra(HBUser.PARTNER_EMAIL_ADDRESS, partnerEmailAddress);
-                    s.release();
-                }
-
-                @Override
-                public void errorCallback(String channel, PubnubError error) {
-                    Log.d("X", error.getErrorString());
-                    s.release();
-                }
-            });
-        }
 
         @Override
         protected void onPostExecute(final Boolean success) {

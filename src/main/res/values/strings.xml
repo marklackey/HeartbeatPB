@@ -21,6 +21,7 @@
     <string name="action_invite">Invite Loved One</string>
     <string name="waiting_message">Waiting for a response.</string>
     <string name="action_start_over">Start Over</string>
+    <string name="action_start_chatting">Start Chatting</string>
     <string name="option_start_over">Or you can start over by clicking below:</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
@@ -34,4 +35,9 @@
     <string name="energyText">Energy!</string>
     <string name="peaceText">Peace</string>
     <string name="spaceText">Space</string>
+
+    <!--No Internet Activity-->
+    <string name="no_internet_message">Pulse cannot reach the Internet.</string>
+    <string name="close_app_message">Please click the button to close the app.</string>
+    <string name="close_app_button_text">Close</string>
 </resources>

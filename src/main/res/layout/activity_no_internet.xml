@@ -8,36 +8,34 @@
     android:orientation="vertical"
     tools:context=".WaitingActivity">
 
+    <!--<ImageView-->
+    <!--android:id="@+id/imageView1"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:scaleType="fitXY"-->
+    <!--android:src="@drawable/waiting" />-->
+
     <TextView
-        android:id="@+id/waitingMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/waiting_message"
+        android:text="@string/no_internet_message"
         android:textAlignment="center"
         android:textSize="24sp"
         android:gravity="center"/>
     <TextView
-        android:id="@+id/startOverMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/option_start_over"
+        android:text="@string/close_app_message"
         android:textAlignment="center"
         android:textSize="18sp"
         android:gravity="center"/>
 
     <Button
-        android:id="@+id/start_over_button"
+        android:id="@+id/close_app_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/action_start_over"
+        android:text="@string/close_app_button_text"
         android:gravity="center"/>
-    <Button
-        android:visibility="gone"
-        android:id="@+id/start_chatting_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/action_start_chatting"
-        android:gravity="center"/>
+
 </LinearLayout>

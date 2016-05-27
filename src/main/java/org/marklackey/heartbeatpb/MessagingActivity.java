@@ -1,10 +1,7 @@
 package org.marklackey.heartbeatpb;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -21,6 +18,7 @@ import com.pubnub.api.PubnubException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.marklackey.heartbeatpb.util.CommonUtils;
 import org.marklackey.heartbeatpb.util.NetworkAccesss;
 
 import java.util.HashMap;
@@ -32,6 +30,7 @@ public class MessagingActivity extends ActionBarActivity {
     private static final int REQUEST_CODE_INVITE = 3;
     private static final int REQUEST_CODE_ACCEPTREJECT = 4;
     private static final int REQUEST_CODE_WAITING = 5;
+    public static final int REQUEST_CODE_NO_INTERNET = 6;
 
     private static final String TAG = "MessagingActivity";
     public static final String SENDER_ID = "senderId";
@@ -42,6 +41,7 @@ public class MessagingActivity extends ActionBarActivity {
     public static final String INVITED = "invitedBy";
     public static final String RESPONSE = "response";
     public static final String START_OVER = "startOver";
+    public static final String CLOSE_APP = "closeApp";
 
     protected MessageAdapter messageAdapter;
 
@@ -145,6 +145,7 @@ public class MessagingActivity extends ActionBarActivity {
             public void successCallback(String channel, Object message) {
                 super.successCallback(channel, message);
             }
+
             @Override
             public void errorCallback(String channel, PubnubError error) {
                 super.errorCallback(channel, error);
@@ -158,15 +159,19 @@ public class MessagingActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        init();
+        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext())) {
+            Intent noInternetIntent = new Intent(this, NoInternetActivity.class);
+            startActivityForResult(noInternetIntent, REQUEST_CODE_NO_INTERNET);
+        } else
+            init();
+
     }
 
     //unxubscribe, since
     @Override
     protected void onPause() {
         super.onPause();
-        if (app != null && app.getPubNub() != null && getUser() != null && getUser().getSharedChannelName() != null)
-            app.getPubNub().unsubscribe(getUser().getSharedChannelName());
+        CommonUtils.unsubscribeAllChannels(app);
     }
 
     void init() {
@@ -238,7 +243,7 @@ public class MessagingActivity extends ActionBarActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             //return from LoginActivity
-            if (requestCode == REQUEST_CODE_LOGIN) {
+            if (requestCode == REQUEST_CODE_LOGIN && data != null) {
                 getUser().setUserEmailAddress(data.getStringExtra(HBUser.USER_EMAIL_ADDRESS));
                 getUser().persistUser(this);
                 Log.d("X", "logged in: " + getUser().getUserEmailAddress());
@@ -254,42 +259,50 @@ public class MessagingActivity extends ActionBarActivity {
                     getUser().setUserState(HBUser.UserState.INVITEE);
                     getUser().persistUser(this);
                 }
-                //invited someone, wait for them to accept or reject us
-            } else if (requestCode == REQUEST_CODE_INVITE) {
+            }
+            //invited someone, wait for them to accept or reject us
+            else if (requestCode == REQUEST_CODE_INVITE && data != null) {
                 if (data.hasExtra(RESPONSE) && data.getStringExtra(RESPONSE).equals(START_OVER)) {
                     app.setUser(new HBUser());
                     getUser().persistUser(MessagingActivity.this);
                 } else {
-                    Log.d("X", "sent invite to partner email adddress: " + getUser().getPartnerEmailAddress());
                     app.getUser().setPartnerEmailAddress(data.getStringExtra(HBUser.PARTNER_EMAIL_ADDRESS));
                     getUser().setUserState(HBUser.UserState.INITIATOR);
                     getUser().persistUser(this);
+                    Log.d("X", "sent invite to partner email adddress: " + getUser().getPartnerEmailAddress());
                 }
-                //we were invited and responded to the invite
+            //we were invited and responded to the invite
             } else if (requestCode == REQUEST_CODE_ACCEPTREJECT) {
-                // If accepts:
-                if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
-                    getUser().setSharedChannelName(CommonUtils.createURLSafeBase64Hash(getUser().getUserEmailAddress() + getUser().getPartnerEmailAddress()));
-                    getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
-                    getUser().persistUser(this);
-                } else if (data.getStringExtra(RESPONSE).equals(REJECT)) {
-                    app.setUser(new HBUser());
-                    getUser().persistUser(MessagingActivity.this);
+                if (data != null && data.hasExtra(RESPONSE)) {
+                    // If accepts:
+                    if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
+                        getUser().setSharedChannelName(CommonUtils.createPubNubSafeBase64Hash(getUser().getUserEmailAddress() + getUser().getPartnerEmailAddress()));
+                        getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
+                        getUser().persistUser(this);
+                    } else if (data.getStringExtra(RESPONSE).equals(REJECT)) {
+                        app.setUser(new HBUser());
+                        getUser().persistUser(MessagingActivity.this);
+                    }
                 }
             } else if (requestCode == REQUEST_CODE_WAITING) {
-                if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
-                    getUser().setSharedChannelName(CommonUtils.createURLSafeBase64Hash(getUser().getPartnerEmailAddress() + getUser().getUserEmailAddress()));
-                    getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
-                    getUser().persistUser(MessagingActivity.this);
-                    //rejected invite, so start over
-                } else if (data.getStringExtra(RESPONSE).equals(START_OVER)) {
-                    app.setUser(new HBUser());
-                    getUser().persistUser(MessagingActivity.this);
+                if (data != null && data.hasExtra(RESPONSE)) {
+                    if (data.getStringExtra(RESPONSE).equals(ACCEPT)) {
+                        getUser().setSharedChannelName(CommonUtils.createPubNubSafeBase64Hash(getUser().getPartnerEmailAddress() + getUser().getUserEmailAddress()));
+                        getUser().setUserState(HBUser.UserState.CONNECTED_TO_PARTNER);
+                        getUser().persistUser(MessagingActivity.this);
+                        //rejected invite, so start over
+                    } else if (data.getStringExtra(RESPONSE).equals(START_OVER)) {
+                        app.setUser(new HBUser());
+                        getUser().persistUser(MessagingActivity.this);
+                    }
+                }
+            } else if (requestCode == REQUEST_CODE_NO_INTERNET) {
+                if (data != null && data.hasExtra(RESPONSE) && data.getStringExtra(RESPONSE).equals(CLOSE_APP)) {
+                    finish();
                 }
             } else {
                 Log.d("X", "Result OK, Unknown Request Code:" + requestCode);
             }
-
         } else {
             finish();
         }
@@ -301,8 +314,7 @@ public class MessagingActivity extends ActionBarActivity {
     }
 
     void startChatting() {
-        if (!NetworkAccesss.haveNetworkAccess(getApplicationContext()))
-            Toast.makeText(this, "No Internet =(", Toast.LENGTH_LONG).show();
+
         //populate message history
         app.getPubNub().history(getUser().getSharedChannelName(), 100, new Callback() {
             @Override
@@ -388,8 +400,6 @@ public class MessagingActivity extends ActionBarActivity {
             Log.d("X", e.getErrorResponse());
         }
     }
-
-
 
 
 }
